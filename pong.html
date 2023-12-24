@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@700&display=swap" rel="stylesheet">
+    <style>
+        .input{
+            text-transform: uppercase;
+            width: 640px;
+            font-family: 'Silkscreen', sans-serif;
+            font-size: 6em;
+            border: 5px solid #5de83a;
+            color: #5de83a;
+            text-align: center;
+            background-color: white;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" style="background-color: #d6d6d6; color: black; display: flex; margin: auto;"></canvas>
+    <div class="input" onclick="restart();">restart</div>
+</body>
+<script>
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+
+    // i create the canvas
+    canvas.width = 650;
+    canvas.height = 400;
+
+    // i set the scores to 0
+    let score1 = 0;
+    let score2 = 0;
+
+    let keys = {};
+
+    window.addEventListener("keydown", function(e){
+        keys[e.keyCode] = true;
+        e.preventDefault();
+    })
+
+    window.addEventListener("keyup", function(e){
+        delete keys[e.keyCode];
+    })
+
+    //creating the "base" of all the boxes we'll create
+    class Box{
+        constructor(options){
+            this.x = options.x || 10;
+            this.y = options.height || 50;
+            this.width = options.width || 40;
+            this.height = options.height || 50;
+            this.color = options.color || white;
+            this.speed = options.speed || 2;
+            this.gravity = options.gravity || 2;
+        }
+    }
+
+    // creating player 1 paddle
+    let player1 = new Box({
+        x : 10,
+        y: 200,
+        width: 15,
+        height: 80,
+        color: '#ffffff',
+        gravity: 2,
+    });
+
+    //creating player 2 paddle
+    let player2 = new Box({
+        x : 625,
+        y: 100,
+        width: 15,
+        height: 80,
+        color: '#ffffff',
+        gravity: 2,
+    })
+
+    // creating the net
+    let midLine = new Box({
+        x: (canvas.width/2) - 2.5,
+        y: -1,
+        width: 5,
+        height: canvas.height+1,
+        color: '#FFFFFF'
+    });
+
+    // this function will call every box we drew
+    function drawBox(box){
+        ctx.fillStyle = box.color;
+        ctx.fillRect(box.x, box.y, box.width, box.height);
+    }
+
+    // this displays the score of player 1
+    function displayScore1(){
+        ctx.font = "30px 'Silkscreen'";
+        ctx.fillStyle = "#828282";
+        let str1 = score1;
+        ctx.fillText(str1, (canvas.width/2) - 50, 30);
+    }
+
+    // this displays the score of player 2
+    function displayScore2(){
+        ctx.font = "30px 'Silkscreen'";
+        ctx.fillStyle = "#828282";
+        let str2 = score2;
+        ctx.fillText(str2, (canvas.width/2) + 50, 30);
+    }
+
+            //create the ball
+        let ball = new Box({
+            x : (canvas.width / 2),
+            y : (canvas.height / 2),
+            width : 15,
+            height : 15,
+            color: '#5de83a',
+            speed: 7,
+            gravity : 1,
+        })
+
+    // function to let my ball bounce on the walls
+    function ballBounce(){
+        if (((ball.y+ball.gravity) <= 0) || ((ball.y+ball.gravity+ball.height) >= canvas.height)){
+            ball.gravity = ball.gravity * -1;
+            ball.y += ball.gravity;
+            ball.x += ball.speed;
+        } else {
+            ball.x += ball.speed;
+            ball.y += ball.gravity;
+        }
+
+        ballCollision();
+    }
+
+    // function to let my ball react to a collision
+    // if the ball is in player1 paddle and player2 same
+    function ballCollision(){
+        if (((ball.x + ball.speed <= player1.x + player1.width) && (ball.y + ball.gravity > player1.y) && ball.y + ball.gravity <= player1.y + player1.height) || ((ball.x + ball.width + ball.speed >= player2.x) && (ball.y + ball.gravity > player2.y) && ball.y + ball.gravity <= player2.y + player2.height)) {
+            ball.speed = ball.speed * -1;
+        } else if(ball.x + ball.speed < player1.x){
+            score2 +=1;
+            ball.speed = ball.speed * -1;
+            ball.x = 100 + ball.speed;
+            ball.y += ball.gravity;
+        } else if(ball.x + ball.speed > player2.x + player2.width){
+            score1 += 1;
+            ball.speed = ball.speed * -1;
+            ball.x = 500 + ball.speed;
+            ball.y += ball.gravity;
+        } else {
+            draw();
+        }
+
+        draw();
+    }
+
+     // this will draw each object
+     function draw(){
+        ctx.clearRect(0,0, canvas.width, canvas.height);
+        displayScore1();
+        displayScore2();
+        drawBox(player1);
+        drawBox(player2);
+        drawBox(midLine);
+        drawBox(ball);
+    }
+
+    function input(){
+        if (90 in keys) {
+            if (player1.y - player1.gravity > 0) {
+                player1.y -= player1.gravity;
+            }
+        } else if (83 in keys){ //if s pressed
+            if(player1.y + player1.height + player1.gravity < canvas.height){
+                player1.y += player1.gravity;
+            }
+        }
+
+        if(38 in keys){ // if up arrow is pressed
+            if(player2.y - player2.gravity > 0){
+                player2.y -= player2.gravity ;
+            }
+        } else if (40 in keys){ // if down arrow is pressed
+            if(player2.y + player2.height + player2.gravity < canvas.height){
+                player2.y += player2.gravity;
+            }
+        }
+    }
+
+    function restart(){
+        score1 = 0;
+        score2 = 0;
+    }
+
+    function loop(){
+        draw();
+        ballBounce();
+        input(player1);
+        input(player2);
+        window.requestAnimationFrame(loop);
+    }
+
+    loop();
+</script>
+</html>
